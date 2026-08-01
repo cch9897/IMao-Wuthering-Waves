@@ -89,7 +89,7 @@ jobs:
       - name: Configure IMao-Core
         shell: pwsh
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR=C:\opencv\build -DPADDLE_LIB=C:\paddle_lib\paddle_inference
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR=C:\opencv\build -DPADDLE_LIB=C:\paddle_lib
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build IMao-Core
@@ -113,11 +113,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$out\Assets" | Out-Null
           Copy-Item -Recurse "C:\assets\*" "$out\Assets\" -Force
           # paddle 运行时 DLL
-          Copy-Item "C:\paddle_lib\paddle_inference\paddle\lib\paddle_inference.dll" $out -Force
-          Copy-Item "C:\paddle_lib\paddle_inference\paddle\lib\common.dll" $out -Force
-          Copy-Item "C:\paddle_lib\paddle_inference\third_party\install\mklml\lib\mklml.dll" $out -Force
-          Copy-Item "C:\paddle_lib\paddle_inference\third_party\install\mklml\lib\libiomp5md.dll" $out -Force
-          Copy-Item "C:\paddle_lib\paddle_inference\third_party\install\mkldnn\lib\mkldnn.dll" $out -Force -ErrorAction SilentlyContinue
+          Copy-Item "C:\paddle_lib\paddle\lib\paddle_inference.dll" $out -Force
+          Copy-Item "C:\paddle_lib\paddle\lib\common.dll" $out -Force
+          Copy-Item "C:\paddle_lib\third_party\install\mklml\lib\mklml.dll" $out -Force
+          Copy-Item "C:\paddle_lib\third_party\install\mklml\lib\libiomp5md.dll" $out -Force
+          Copy-Item "C:\paddle_lib\third_party\install\mkldnn\lib\mkldnn.dll" $out -Force -ErrorAction SilentlyContinue
           Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
           Compress-Archive -Path "$out\*" -DestinationPath "IMao-v2-full.zip" -Force
           Get-Item "IMao-v2-full.zip" | Select-Object Name, Length
