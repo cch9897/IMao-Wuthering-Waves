@@ -33,7 +33,7 @@ jobs:
           tar xzf opencv_contrib.tar.gz
           Move-Item opencv-4.10.0 opencv
           Move-Item opencv_contrib-4.10.0 opencv_contrib
-          cmake -S opencv -B opencv/build -G "Visual Studio 17 2022" -A x64 -DOPENCV_EXTRA_MODULES_PATH=C:\opencv-src\opencv_contrib\modules -DOPENCV_ENABLE_NONFREE=ON -DBUILD_LIST=core,imgproc,imgcodecs,features2d,flann,calib3d,xfeatures2d -DBUILD_SHARED_LIBS=OFF -DBUILD_WITH_STATIC_CRT=ON -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF -DBUILD_opencv_java=OFF -DWITH_IPP=OFF -DWITH_OPENCL=OFF -DWITH_FFMPEG=OFF -DWITH_MSMF=OFF -DWITH_DSHOW=OFF -DWITH_ADE=OFF -DBUILD_PNG=ON -DBUILD_JPEG=ON -DBUILD_TIFF=OFF -DBUILD_WEBP=OFF -DBUILD_ZLIB=ON
+          cmake -S opencv -B opencv/build -G "Visual Studio 17 2022" -A x64 -DOPENCV_EXTRA_MODULES_PATH=C:\opencv-src\opencv_contrib\modules -DOPENCV_ENABLE_NONFREE=ON "-DBUILD_LIST=core,imgproc,imgcodecs,features2d,flann,calib3d,xfeatures2d" -DBUILD_SHARED_LIBS=OFF -DBUILD_WITH_STATIC_CRT=ON -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF -DBUILD_opencv_java=OFF -DWITH_IPP=OFF -DWITH_OPENCL=OFF -DWITH_FFMPEG=OFF -DWITH_MSMF=OFF -DWITH_DSHOW=OFF -DWITH_ADE=OFF -DBUILD_PNG=ON -DBUILD_JPEG=ON -DBUILD_TIFF=OFF -DBUILD_WEBP=OFF -DBUILD_ZLIB=ON
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build opencv/build --config Release --parallel 4
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
