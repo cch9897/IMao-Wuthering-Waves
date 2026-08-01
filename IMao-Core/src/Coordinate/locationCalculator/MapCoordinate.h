@@ -18,6 +18,12 @@ class MapCoordinate
 
        static Coordinate PlayerLahaiCoordToImgMapCoord(Coordinate LahaiCoordinate);
 
+       static Coordinate PlayerUnderVaultCoordToImgMapCoord(Coordinate coordinate);
+
+       static Coordinate PlayerDarkPlainCoordToImgMapCoord(Coordinate coordinate);
+
+       static Coordinate PlayerTimeRiftCoordToImgMapCoord(Coordinate coordinate);
+
        static Coordinate IdentifyCoorToImgMapCoord(Coordinate playerCoordinate, int sceneId);
 
        static bool GetMapCoordinateOfCenterGameMapPos(const ImageFeatureData& originalFeatureData, const ImageFeatureData& testFeatureData, const std::vector<cv::DMatch>& goodMatches, cv::Mat& testIame, Coordinate& outResult);

@@ -15,6 +15,9 @@ json DrawItemBase::itemsJsonData_Tethys;
 json DrawItemBase::itemsJsonData_Fabricatorium;
 json DrawItemBase::itemsJsonData_Avinoleum;
 json DrawItemBase::itemsJsonData_Lahai;
+json DrawItemBase::itemsJsonData_UnderVault;
+json DrawItemBase::itemsJsonData_DarkPlain;
+json DrawItemBase::itemsJsonData_TimeRift;
 
 vector<ItemTextureData> DrawItemBase::itemsTextureData;
 vector<ItemsDatas> DrawItemBase::itemsDatas_World_Storage;
@@ -22,6 +25,9 @@ vector<ItemsDatas> DrawItemBase::itemsDatas_Tethys_Storage;
 vector<ItemsDatas> DrawItemBase::itemsDatas_Fabricatorium_Storage;
 vector<ItemsDatas> DrawItemBase::itemsDatas_Avinoleum_Storage;
 vector<ItemsDatas> DrawItemBase::itemsDatas_Lahai_Storage;
+vector<ItemsDatas> DrawItemBase::itemsDatas_UnderVault_Storage;
+vector<ItemsDatas> DrawItemBase::itemsDatas_DarkPlain_Storage;
+vector<ItemsDatas> DrawItemBase::itemsDatas_TimeRift_Storage;
 thread DrawItemBase::thread_ReadSavedPointsJson;
 string DrawItemBase::savedJsonPath;
 
@@ -88,6 +94,9 @@ void DrawItemBase::LoadItemsjson() {
     LoadJson(itemsJsonData_Fabricatorium, L"ITEMSJSON_Fabricatorium");
     LoadJson(itemsJsonData_Avinoleum, L"ITEMSJSON_Avinoleum");
     LoadJson(itemsJsonData_Lahai, L"ITEMSJSON_Lahai");
+    LoadJson(itemsJsonData_UnderVault, L"ITEMSJSON_UnderVault");
+    LoadJson(itemsJsonData_DarkPlain, L"ITEMSJSON_DarkPlain");
+    LoadJson(itemsJsonData_TimeRift, L"ITEMSJSON_TimeRift");
 }
 
 bool DrawItemBase::IsValidItemNameId(string itemNameId) {
@@ -116,6 +125,24 @@ bool DrawItemBase::IsValidItemNameId(string itemNameId) {
     }
 
     for (const auto& itemsDatas : itemsDatas_Lahai_Storage) {
+        if (itemsDatas.nameId == itemNameId) {
+            return true;
+        }
+    }
+
+    for (const auto& itemsDatas : itemsDatas_UnderVault_Storage) {
+        if (itemsDatas.nameId == itemNameId) {
+            return true;
+        }
+    }
+
+    for (const auto& itemsDatas : itemsDatas_DarkPlain_Storage) {
+        if (itemsDatas.nameId == itemNameId) {
+            return true;
+        }
+    }
+
+    for (const auto& itemsDatas : itemsDatas_TimeRift_Storage) {
         if (itemsDatas.nameId == itemNameId) {
             return true;
         }
@@ -152,6 +179,24 @@ bool DrawItemBase::FindItemJsonData(int sceneId, json*& itemJsonData, vector<Ite
     if (sceneId == 5) {
         itemJsonData = &itemsJsonData_Lahai;
         itemsDatas_Storage = &itemsDatas_Lahai_Storage;
+        return true;
+    }
+
+    if (sceneId == 6) {
+        itemJsonData = &itemsJsonData_UnderVault;
+        itemsDatas_Storage = &itemsDatas_UnderVault_Storage;
+        return true;
+    }
+
+    if (sceneId == 7) {
+        itemJsonData = &itemsJsonData_DarkPlain;
+        itemsDatas_Storage = &itemsDatas_DarkPlain_Storage;
+        return true;
+    }
+
+    if (sceneId == 8) {
+        itemJsonData = &itemsJsonData_TimeRift;
+        itemsDatas_Storage = &itemsDatas_TimeRift_Storage;
         return true;
     }
 
@@ -208,6 +253,13 @@ void DrawItemBase::ClearItemData(string itemId) {
         }
     }
 
+    for (int i = 0; i < itemsDatas_Fabricatorium_Storage.size(); i++) {
+        if (itemsDatas_Fabricatorium_Storage[i].nameId == itemId) {
+            itemsDatas_Fabricatorium_Storage.erase(itemsDatas_Fabricatorium_Storage.begin() + i);
+            break;
+        }
+    }
+
     for (int i = 0; i < itemsDatas_Avinoleum_Storage.size(); i++) {
         if (itemsDatas_Avinoleum_Storage[i].nameId == itemId) {
             itemsDatas_Avinoleum_Storage.erase(itemsDatas_Avinoleum_Storage.begin() + i);
@@ -218,6 +270,27 @@ void DrawItemBase::ClearItemData(string itemId) {
     for (int i = 0; i < itemsDatas_Lahai_Storage.size(); i++) {
         if (itemsDatas_Lahai_Storage[i].nameId == itemId) {
             itemsDatas_Lahai_Storage.erase(itemsDatas_Lahai_Storage.begin() + i);
+            break;
+        }
+    }
+
+    for (int i = 0; i < itemsDatas_UnderVault_Storage.size(); i++) {
+        if (itemsDatas_UnderVault_Storage[i].nameId == itemId) {
+            itemsDatas_UnderVault_Storage.erase(itemsDatas_UnderVault_Storage.begin() + i);
+            break;
+        }
+    }
+
+    for (int i = 0; i < itemsDatas_DarkPlain_Storage.size(); i++) {
+        if (itemsDatas_DarkPlain_Storage[i].nameId == itemId) {
+            itemsDatas_DarkPlain_Storage.erase(itemsDatas_DarkPlain_Storage.begin() + i);
+            break;
+        }
+    }
+
+    for (int i = 0; i < itemsDatas_TimeRift_Storage.size(); i++) {
+        if (itemsDatas_TimeRift_Storage[i].nameId == itemId) {
+            itemsDatas_TimeRift_Storage.erase(itemsDatas_TimeRift_Storage.begin() + i);
             break;
         }
     }

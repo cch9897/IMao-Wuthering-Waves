@@ -102,6 +102,22 @@ Coordinate MapCoordinate::PlayerLahaiCoordToImgMapCoord(Coordinate LahaiCoordina
     return PlayerMapCoor;
 }
 
+// 下层金库 6 / 黯原 7 / 时隙废都 8：原点未标定（需 NEW MAP.png 更新后在游戏内校准）
+Coordinate MapCoordinate::PlayerUnderVaultCoordToImgMapCoord(Coordinate coordinate) {
+    Coordinate PlayerMapCoor(coordinate.x * 1.205 + UnderVaultOriginCoordinates::x, coordinate.y * 1.205 + UnderVaultOriginCoordinates::y);
+    return PlayerMapCoor;
+}
+
+Coordinate MapCoordinate::PlayerDarkPlainCoordToImgMapCoord(Coordinate coordinate) {
+    Coordinate PlayerMapCoor(coordinate.x * 1.205 + DarkPlainOriginCoordinates::x, coordinate.y * 1.205 + DarkPlainOriginCoordinates::y);
+    return PlayerMapCoor;
+}
+
+Coordinate MapCoordinate::PlayerTimeRiftCoordToImgMapCoord(Coordinate coordinate) {
+    Coordinate PlayerMapCoor(coordinate.x * 1.205 + TimeRiftOriginCoordinates::x, coordinate.y * 1.205 + TimeRiftOriginCoordinates::y);
+    return PlayerMapCoor;
+}
+
 
 Coordinate MapCoordinate::IdentifyCoorToImgMapCoord(Coordinate identifyCoordinate,int sceneId) {
     if (sceneId == 1) {
@@ -122,6 +138,18 @@ Coordinate MapCoordinate::IdentifyCoorToImgMapCoord(Coordinate identifyCoordinat
 
     if (sceneId == 5) {
         return PlayerLahaiCoordToImgMapCoord(identifyCoordinate);
+    }
+
+    if (sceneId == 6) {
+        return PlayerUnderVaultCoordToImgMapCoord(identifyCoordinate);
+    }
+
+    if (sceneId == 7) {
+        return PlayerDarkPlainCoordToImgMapCoord(identifyCoordinate);
+    }
+
+    if (sceneId == 8) {
+        return PlayerTimeRiftCoordToImgMapCoord(identifyCoordinate);
     }
 
     return Coordinate(0, 0);

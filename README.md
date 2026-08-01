@@ -37,3 +37,26 @@
 
 ### 开发
 [如何编译项目](Docs/Compile_zh-Hans.md)
+
+### 点位数据更新（2026-08 快照）
+点位数据来自库街区《鸣潮》官方互动地图（kurobbs.com/mc/map/），已更新至 3.5 版本：
+
+| 数据文件 | 区域 | 条目数 | 点位总数 |
+|---|---|---|---|
+| itemsData_World.json | 瑝珑/黑海岸/黎那汐塔/罗伊冰原（综合） | 429 | 19180 |
+| itemsData_Tethys.json | 泰缇斯之底 | 40 | 415 |
+| itemsData_UnderVault.json | 下层金库（新增） | 37 | 238 |
+| itemsData_Avinoleum.json | 阿维纽林 | 31 | 462 |
+| itemsData_Fabricatorium.json | 隐海试验场 | 35 | 236 |
+| itemsData_Lahai.json | 罗伊冰原 | 74 | 2535 |
+| itemsData_DarkPlain.json | 黯原（新增） | 43 | 673 |
+| itemsData_TimeRift.json | 时隙废都（新增） | 9 | 59 |
+
+- 重新拉取最新数据：`python3 scripts/gen_itemsdata.py`（依赖库街区互动地图的静态资源，脚本内有数据源说明）
+- 新增区域（UnderVault/DarkPlain/TimeRift）已完成数据与代码注册；但**地图定位依赖 `NEW MAP.png` 特征匹配**，新区域在游戏内的原点校准（`CoordinateStruct.h` 中 `*OriginCoordinates`）尚未完成，需作者更新地图资源后在游戏内标定。在此之前新区域点位数据已就绪，不影响旧区域使用。
+
+### 修复记录
+- OCR 坐标解析放宽：允许 OCR 多文本块、置信度阈值 0.85→0.70、兼容 1~2 个分隔符（对应 #10 Win11 双屏/4K 下坐标识别失败场景）
+- OCR 失败时输出诊断日志（Debug 模式）：`[IMao] OCR coords failed. blocks=N | 'text'(score=...)`
+- 修正 `DrawItemBase::ClearItemData` 遗漏 Fabricatorium 区域清理的缺陷
+- 补齐新区域缺失的 33 个点位图标（来自官方 CDN），资源名与文件均已在 `.rc`/`resource.h` 注册

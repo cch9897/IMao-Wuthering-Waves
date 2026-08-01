@@ -47,10 +47,31 @@ struct LahaiOriginCoordinates {
     inline static double y = 13138;
 };
 
+//下层金库 6
+//TODO:原点需在游戏内标定（依赖 NEW MAP.png 更新）
+struct UnderVaultOriginCoordinates {
+    inline static double x = 0;
+    inline static double y = 0;
+};
+
+//黯原 7
+//TODO:原点需在游戏内标定（依赖 NEW MAP.png 更新）
+struct DarkPlainOriginCoordinates {
+    inline static double x = 0;
+    inline static double y = 0;
+};
+
+//时隙废都 8
+//TODO:原点需在游戏内标定（依赖 NEW MAP.png 更新）
+struct TimeRiftOriginCoordinates {
+    inline static double x = 0;
+    inline static double y = 0;
+};
+
 //TODO:需要适配更多地图
 struct Scene {
-    inline static std::vector<int> sceneIds = {1,2,3,4,5};
-    inline static std::vector<std::string> sceneNames = { "World","Tethys","Fabricatorium","Avinoleum","Lahai"};
+    inline static std::vector<int> sceneIds = {1,2,3,4,5,6,7,8};
+    inline static std::vector<std::string> sceneNames = { "World","Tethys","Fabricatorium","Avinoleum","Lahai","UnderVault","DarkPlain","TimeRift" };
     
     static std::string SceneIdToName(int sceneId) {
         for (size_t i = 0; i < sceneIds.size(); i++) {

@@ -48,11 +48,17 @@ public:
 	static std::vector<ItemsDatas> itemsDatas_Fabricatorium_Storage;
 	static std::vector<ItemsDatas> itemsDatas_Avinoleum_Storage;
 	static std::vector<ItemsDatas> itemsDatas_Lahai_Storage;
+	static std::vector<ItemsDatas> itemsDatas_UnderVault_Storage;
+	static std::vector<ItemsDatas> itemsDatas_DarkPlain_Storage;
+	static std::vector<ItemsDatas> itemsDatas_TimeRift_Storage;
 	static json itemsJsonData_World;
 	static json itemsJsonData_Tethys;
 	static json itemsJsonData_Fabricatorium;
 	static json itemsJsonData_Avinoleum;
 	static json itemsJsonData_Lahai;
+	static json itemsJsonData_UnderVault;
+	static json itemsJsonData_DarkPlain;
+	static json itemsJsonData_TimeRift;
 
 private:
 	static json& GetSavedItemPoints();

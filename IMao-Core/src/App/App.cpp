@@ -265,7 +265,7 @@ winrt::IAsyncOperation<bool> App::GetMinMapPlayerROC(const Mat& snapshot,Coordin
 
 	if ((identifyCoordinate.x == 0 && identifyCoordinate.y == 0) || playerCurrentSceneId == 0) {
 
-		Notification::AddInfo(NotificationDatas("Continuity match failed, trying to identify coordinates.", 3));
+		Notification::AddInfo(NotificationDatas("Location match failed, trying OCR to read coordinates (check game resolution/UI scale if this persists).", 3));
 
 		Mat snapshot_ocr;
 		if (graphicsCapture.has_value()) {
