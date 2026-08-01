@@ -41,23 +41,21 @@
 ### 点位数据更新（2026-08 快照）
 点位数据来自库街区《鸣潮》官方互动地图（kurobbs.com/mc/map/），已更新至 3.5 版本：
 
-| 数据文件 | 区域 | 条目数 | 点位总数 |
-|---|---|---|---|
-| itemsData_World.json | 瑝珑/黑海岸/黎那汐塔/罗伊冰原（综合） | 429 | 19180 |
-| itemsData_Tethys.json | 泰缇斯之底 | 40 | 415 |
-| itemsData_UnderVault.json | 下层金库（新增） | 37 | 238 |
-| itemsData_Avinoleum.json | 阿维纽林 | 31 | 462 |
-| itemsData_Fabricatorium.json | 隐海试验场 | 35 | 236 |
-| itemsData_Lahai.json | 罗伊冰原 | 74 | 2535 |
-| itemsData_DarkPlain.json | 黯原（新增） | 43 | 673 |
-| itemsData_TimeRift.json | 时隙废都（新增） | 9 | 59 |
+| 数据文件 | 区域 | 条目数 | 点位总数 | 状态 |
+|---|---|---|---|---|
+| itemsData_World.json | 瑝珑/黑海岸/黎那汐塔/罗伊冰原 + 黯原 + 时隙废都 | 451 | 19912 | ✅ 可直接使用 |
+| itemsData_Tethys.json | 泰缇斯之底 | 40 | 415 | ✅ |
+| itemsData_UnderVault.json | 下层金库 | 37 | 238 | ⚠️ 地下独立坐标系，暂无法定位 |
+| itemsData_Avinoleum.json | 阿维纽林 | 31 | 462 | ✅ |
+| itemsData_Fabricatorium.json | 隐海试验场 | 35 | 236 | ✅ |
+| itemsData_Lahai.json | 罗伊冰原 | 74 | 2535 | ✅ |
+| itemsData_DarkPlain.json | 黯原（已并入 World） | 43 | 673 | ✅ 并入 World |
+| itemsData_TimeRift.json | 时隙废都（已并入 World） | 9 | 59 | ✅ 并入 World |
 
 - 重新拉取最新数据：`python3 scripts/gen_itemsdata.py`（依赖库街区互动地图的静态资源，脚本内有数据源说明）
-- 新增区域（UnderVault/DarkPlain/TimeRift）已完成**数据文件 + 代码注册**（sceneId 6/7/8、资源挂载、图标补齐）。但这些区域是**独立瓦片集 + 局部坐标系**（官方 `mcmap/tiles/<hash>/909/909_{x}_{y}.png` 等），要真正在地图上定位还需要以下 3 步（前 2 步可用 `scripts/` 下工具完成，第 3 步需游戏内标定）：
-  1. **拼图**：把新区域瓦片拼入 `NEW MAP.png` 的空白区域（作者当前 2025-12 版地图不含黯原/下层金库/时隙废都地形）
-  2. **特征**：从更新后的 `NEW MAP.png` 重新生成 `Map_features.yml`（SURF 特征；作者 2026-01 版仅覆盖旧区域，黯原区域只有 1 个特征点，无法匹配）
-  3. **标定**：在游戏内站到新区域坐标 (0,0) 附近，把实际地图位置写入 `CoordinateStruct.h` 中 `UnderVault/DarkPlain/TimeRiftOriginCoordinates`（现为 0 占位）
-- 说明：新区域点位坐标（如黯原 x∈[-60961,189400]）是**区域局部坐标**，不能直接套用 `WorldOriginCoordinates` 映射（会落到地图空白/错位），必须完成上述标定
+- **黯原（909）/ 时隙废都（910）**：经验证其点位为世界坐标（`Map.png` 中对应区域地形与特征均已存在），已并入 `itemsData_World.json`，可直接在地图上显示
+- **下层金库（902）**：官方将其作为地下独立坐标系管理（`countryId=3` 黎那汐塔地下，非世界坐标），`Map.png` 无对应地形，暂无法定位显示。数据文件保留（sceneId 6 已注册，origin 为 0 占位），待作者将地下瓦片拼入地图并标定后启用
+- 特征文件（`Map_features.yml`）：作者 2026-01 版已覆盖黯原/时隙废都区域（黯原区 1094 个特征点），无需更新；如未来拼入新地图可用 `scripts/gen_features.cpp` 重新生成
 
 ### 修复记录
 - OCR 坐标解析放宽：允许 OCR 多文本块、置信度阈值 0.85→0.70、兼容 1~2 个分隔符（对应 #10 Win11 双屏/4K 下坐标识别失败场景）
