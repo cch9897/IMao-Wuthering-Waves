@@ -89,7 +89,7 @@ jobs:
       - name: Configure IMao-Core
         shell: pwsh
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CSharp_COMPILER="C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" -DOPENCV_DIR=C:\opencv\build -DPADDLE_LIB=C:\paddle_lib\paddle_inference
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR=C:\opencv\build -DPADDLE_LIB=C:\paddle_lib\paddle_inference
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build IMao-Core

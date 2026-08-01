@@ -1,5 +1,11 @@
 ﻿cmake_minimum_required(VERSION 3.14)
-project(IMao-Core CXX C CSharp)
+# C# 语言仅在 Visual Studio 生成器下启用（CMake 的 C# 支持仅限 VS 生成器；
+# Ninja/其他生成器下 C# 项目由 dotnet build 单独构建）
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
+    project(IMao-Core CXX C CSharp)
+else()
+    project(IMao-Core CXX C)
+endif()
 
 SET(DEMO_NAME "IMao-Core")
 
