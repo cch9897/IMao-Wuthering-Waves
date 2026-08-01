@@ -24,29 +24,26 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\opencv
-          key: opencv-4.10-nonfree-static-msvc-${{ runner.os }}
+          key: opencv-4.10-nonfree-static-msvc-v2-${{ runner.os }}
 
       - name: Build OpenCV (NONFREE)
         if: steps.cache-opencv.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path C:\opencv-src | Out-Null
-          cd C:\opencv-src
+          New-Item -ItemType Directory -Force -Path C:\opencv | Out-Null
+          cd C:\opencv
           curl.exe -sL -o opencv.tar.gz https://github.com/opencv/opencv/archive/refs/tags/4.10.0.tar.gz
           curl.exe -sL -o opencv_contrib.tar.gz https://github.com/opencv/opencv_contrib/archive/refs/tags/4.10.0.tar.gz
           tar xzf opencv.tar.gz
           tar xzf opencv_contrib.tar.gz
           Move-Item opencv-4.10.0 opencv
           Move-Item opencv_contrib-4.10.0 opencv_contrib
-          cmake -S opencv -B opencv/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_EXTRA_MODULES_PATH=C:\opencv-src\opencv_contrib\modules -DOPENCV_ENABLE_NONFREE=ON "-DBUILD_LIST=core,imgproc,imgcodecs,features2d,flann,calib3d,xfeatures2d" -DBUILD_SHARED_LIBS=OFF -DBUILD_WITH_STATIC_CRT=ON -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF -DBUILD_opencv_java=OFF -DWITH_IPP=OFF -DWITH_OPENCL=OFF -DWITH_FFMPEG=OFF -DWITH_MSMF=OFF -DWITH_DSHOW=OFF -DWITH_ADE=OFF -DBUILD_PNG=ON -DBUILD_JPEG=ON -DBUILD_TIFF=OFF -DBUILD_WEBP=OFF -DBUILD_ZLIB=ON
+          cmake -S opencv -B opencv/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_EXTRA_MODULES_PATH=C:\opencv\opencv_contrib\modules -DOPENCV_ENABLE_NONFREE=ON "-DBUILD_LIST=core,imgproc,imgcodecs,features2d,flann,calib3d,xfeatures2d" -DBUILD_SHARED_LIBS=OFF -DBUILD_WITH_STATIC_CRT=ON -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF -DBUILD_opencv_java=OFF -DBUILD_PROTOBUF=OFF -DWITH_IPP=OFF -DWITH_OPENCL=OFF -DWITH_FFMPEG=OFF -DWITH_MSMF=OFF -DWITH_DSHOW=OFF -DWITH_ADE=OFF -DBUILD_PNG=ON -DBUILD_JPEG=ON -DBUILD_TIFF=OFF -DBUILD_WEBP=OFF -DBUILD_ZLIB=ON
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build opencv/build --config Release --parallel 4
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          New-Item -ItemType Directory -Force -Path C:\opencv | Out-Null
-          Copy-Item -Recurse opencv/build C:\opencv\build
-          Copy-Item -Recurse opencv/modules C:\opencv\modules
-          Copy-Item opencv/CMakeLists.txt C:\opencv\CMakeLists.txt
+          Remove-Item C:\opencv\opencv.tar.gz, C:\opencv\opencv_contrib.tar.gz -ErrorAction SilentlyContinue
 
       # ---------- 2. Paddle Inference 2.6.2 (C++ API) ----------
       - name: Cache Paddle
@@ -89,7 +86,7 @@ jobs:
       - name: Configure IMao-Core
         shell: pwsh
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR=C:\opencv\build -DPADDLE_LIB=C:\paddle_lib
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR=C:\opencv\opencv\build -DPADDLE_LIB=C:\paddle_lib
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build IMao-Core
