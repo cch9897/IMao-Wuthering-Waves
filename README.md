@@ -53,7 +53,11 @@
 | itemsData_TimeRift.json | 时隙废都（新增） | 9 | 59 |
 
 - 重新拉取最新数据：`python3 scripts/gen_itemsdata.py`（依赖库街区互动地图的静态资源，脚本内有数据源说明）
-- 新增区域（UnderVault/DarkPlain/TimeRift）已完成数据与代码注册；但**地图定位依赖 `NEW MAP.png` 特征匹配**，新区域在游戏内的原点校准（`CoordinateStruct.h` 中 `*OriginCoordinates`）尚未完成，需作者更新地图资源后在游戏内标定。在此之前新区域点位数据已就绪，不影响旧区域使用。
+- 新增区域（UnderVault/DarkPlain/TimeRift）已完成**数据文件 + 代码注册**（sceneId 6/7/8、资源挂载、图标补齐）。但这些区域是**独立瓦片集 + 局部坐标系**（官方 `mcmap/tiles/<hash>/909/909_{x}_{y}.png` 等），要真正在地图上定位还需要以下 3 步（前 2 步可用 `scripts/` 下工具完成，第 3 步需游戏内标定）：
+  1. **拼图**：把新区域瓦片拼入 `NEW MAP.png` 的空白区域（作者当前 2025-12 版地图不含黯原/下层金库/时隙废都地形）
+  2. **特征**：从更新后的 `NEW MAP.png` 重新生成 `Map_features.yml`（SURF 特征；作者 2026-01 版仅覆盖旧区域，黯原区域只有 1 个特征点，无法匹配）
+  3. **标定**：在游戏内站到新区域坐标 (0,0) 附近，把实际地图位置写入 `CoordinateStruct.h` 中 `UnderVault/DarkPlain/TimeRiftOriginCoordinates`（现为 0 占位）
+- 说明：新区域点位坐标（如黯原 x∈[-60961,189400]）是**区域局部坐标**，不能直接套用 `WorldOriginCoordinates` 映射（会落到地图空白/错位），必须完成上述标定
 
 ### 修复记录
 - OCR 坐标解析放宽：允许 OCR 多文本块、置信度阈值 0.85→0.70、兼容 1~2 个分隔符（对应 #10 Win11 双屏/4K 下坐标识别失败场景）
