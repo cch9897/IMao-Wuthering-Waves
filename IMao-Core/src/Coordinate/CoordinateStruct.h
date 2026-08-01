@@ -16,34 +16,35 @@ struct Coordinate {
 };
 
 //大世界坐标(0,0)在图片地图上对应的坐标
+//v2 地图（2026-08 扩展梦州）: 左侧 +8786px, 所有 origin x 同步偏移
 struct WorldOriginCoordinates {
-    inline static double x = 2474;
+    inline static double x = 11260;
     inline static double y = 1957;
 };
 
 //泰缇斯之底坐标(0，0)在图片地图上对应的坐标
 //TODO:游戏内大小地图有偏差bug，需在原来的基础上，x-10，y+20
 struct TethysOriginCoordinates {
-    inline static double x = 8593;
+    inline static double x = 17379;
     inline static double y = 1382;
 };
 
 //隐海试验厂 3
 //TODO:游戏内大小地图有偏差bug，需在原来的基础上，x+6
 struct FabricatoriumOriginCoordinates {
-    inline static double x = 7437;
+    inline static double x = 16223;
     inline static double y = 13783;
 };
 
 //阿维纽林 4
 struct AvinoleumOriginCoordinates {
-    inline static double x = 2433;
+    inline static double x = 11219;
     inline static double y = 9030;
 };
 
 //罗伊冰原 5
 struct LahaiOriginCoordinates {
-    inline static double x = 21662;
+    inline static double x = 30448;
     inline static double y = 13138;
 };
 
