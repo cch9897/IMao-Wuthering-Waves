@@ -45,13 +45,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Remove-Item C:\opencv\opencv.tar.gz, C:\opencv\opencv_contrib.tar.gz -ErrorAction SilentlyContinue
 
-      # ---------- 2. Paddle Inference 2.6.2 (C++ API) ----------
+      # ---------- 2. Paddle Inference 3.0.0 (ppocr.lib 需要 EnableNewIR API) ----------
       - name: Cache Paddle
         id: cache-paddle
         uses: actions/cache@v4
         with:
           path: C:\paddle_lib
-          key: paddle-2.6.2-win-cpu-${{ runner.os }}
+          key: paddle-3.0.0-win-cpu-${{ runner.os }}
 
       - name: Download & extract Paddle
         if: steps.cache-paddle.outputs.cache-hit != 'true'
@@ -59,7 +59,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path C:\paddle_lib | Out-Null
           cd C:\paddle_lib
-          curl.exe -sL -o paddle.zip https://paddle-inference-lib.bj.bcebos.com/2.6.2/cxx_c/Windows/CPU/x86-64_avx-mkl-vs2019/paddle_inference.zip
+          curl.exe -sL -o paddle.zip https://paddle-inference-lib.bj.bcebos.com/3.0.0/cxx_c/Windows/CPU/x86-64_avx-mkl-vs2019/paddle_inference.zip
           tar xf paddle.zip
           Remove-Item paddle.zip
 
