@@ -63,6 +63,17 @@ jobs:
           tar xf paddle.zip
           Remove-Item paddle.zip
 
+      # ---------- 2b. yaml-cpp (ppocr.lib 依赖, Paddle 2.6.2 包不含) ----------
+      - name: Install yaml-cpp (static /MT)
+        shell: pwsh
+        run: |
+          cd C:\vcpkg
+          .\vcpkg.exe install yaml-cpp --triplet x64-windows-static
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force -Path C:\paddle_lib\third_party\install\yaml-cpp\lib | Out-Null
+          Copy-Item installed\x64-windows-static\lib\yaml-cpp.lib C:\paddle_lib\third_party\install\yaml-cpp\lib\ -Force
+          Copy-Item -Recurse installed\x64-windows-static\include\yaml-cpp C:\paddle_lib\third_party\install\yaml-cpp\include\yaml-cpp -Force
+
       # ---------- 3. Official assets (OCR models + features) ----------
       - name: Download official assets
         shell: pwsh
