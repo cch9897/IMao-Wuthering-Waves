@@ -12,6 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ---------- 0. MSVC 环境 + Ninja ----------
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install Ninja
+        shell: pwsh
+        run: choco install ninja -y --no-progress
+
       # ---------- 1. OpenCV 4.10 + contrib with SURF (NONFREE, static /MT) ----------
       - name: Cache OpenCV build
         id: cache-opencv
@@ -33,7 +39,7 @@ jobs:
           tar xzf opencv_contrib.tar.gz
           Move-Item opencv-4.10.0 opencv
           Move-Item opencv_contrib-4.10.0 opencv_contrib
-          cmake -S opencv -B opencv/build -G "Visual Studio 17 2022" -A x64 -DOPENCV_EXTRA_MODULES_PATH=C:\opencv-src\opencv_contrib\modules -DOPENCV_ENABLE_NONFREE=ON "-DBUILD_LIST=core,imgproc,imgcodecs,features2d,flann,calib3d,xfeatures2d" -DBUILD_SHARED_LIBS=OFF -DBUILD_WITH_STATIC_CRT=ON -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF -DBUILD_opencv_java=OFF -DWITH_IPP=OFF -DWITH_OPENCL=OFF -DWITH_FFMPEG=OFF -DWITH_MSMF=OFF -DWITH_DSHOW=OFF -DWITH_ADE=OFF -DBUILD_PNG=ON -DBUILD_JPEG=ON -DBUILD_TIFF=OFF -DBUILD_WEBP=OFF -DBUILD_ZLIB=ON
+          cmake -S opencv -B opencv/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_EXTRA_MODULES_PATH=C:\opencv-src\opencv_contrib\modules -DOPENCV_ENABLE_NONFREE=ON "-DBUILD_LIST=core,imgproc,imgcodecs,features2d,flann,calib3d,xfeatures2d" -DBUILD_SHARED_LIBS=OFF -DBUILD_WITH_STATIC_CRT=ON -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF -DBUILD_opencv_java=OFF -DWITH_IPP=OFF -DWITH_OPENCL=OFF -DWITH_FFMPEG=OFF -DWITH_MSMF=OFF -DWITH_DSHOW=OFF -DWITH_ADE=OFF -DBUILD_PNG=ON -DBUILD_JPEG=ON -DBUILD_TIFF=OFF -DBUILD_WEBP=OFF -DBUILD_ZLIB=ON
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build opencv/build --config Release --parallel 4
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -68,7 +74,6 @@ jobs:
           cd C:\assets_src
           curl.exe -sL -o official.zip https://github.com/Yepin2022/IMao-Wuthering-Waves/releases/download/1.0.2/IMao.v1.0.2.zip
           tar xf official.zip
-          # 提取 Assets
           New-Item -ItemType Directory -Force -Path C:\assets | Out-Null
           Copy-Item -Recurse "IMao/Assets/*" C:\assets\
 
@@ -77,45 +82,43 @@ jobs:
         run: |
           cd C:\assets_src
           curl.exe -sL -o v2map.7z https://github.com/cch9897/IMao-Wuthering-Waves/releases/download/v2-map/imao_v2_map.7z
-          # 7z 解压（Windows 自带 tar 不支持 7z，用 Expand-Archive 也不行；先检查 7z）
-          $7z = Get-Command 7z -ErrorAction SilentlyContinue
-          if ($7z) {
-            7z x -y v2map.7z -oC:\v2map | Out-Null
-          } else {
-            # GitHub runner 自带 7zip 在 Program Files
-            & "C:\Program Files\7-Zip\7z.exe" x -y v2map.7z -oC:\v2map | Out-Null
-          }
+          & "C:\Program Files\7-Zip\7z.exe" x -y v2map.7z -oC:\v2map | Out-Null
           Copy-Item C:\v2map\Map_features_v2.yml C:\assets\FeaturesDatas\Map_features.yml -Force
 
-      # ---------- 4. Build IMao-Core + WinUI ----------
-      - name: Configure (CMake)
+      # ---------- 4. Build IMao-Core (C++ DLL) ----------
+      - name: Configure IMao-Core
         shell: pwsh
         run: |
-          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DOPENCV_DIR=C:\opencv\build -DPADDLE_LIB=C:\paddle_lib\paddle_inference
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR=C:\opencv\build -DPADDLE_LIB=C:\paddle_lib\paddle_inference
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Build
+      - name: Build IMao-Core
         shell: pwsh
         run: |
           cmake --build build --config Release --parallel 4
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      # ---------- 5. Assemble package ----------
+      # ---------- 5. Build IMao-WinUI (C# WinUI 3) ----------
+      - name: Build IMao-WinUI
+        shell: pwsh
+        run: |
+          dotnet build IMao-WinUI/IMao-WinUI.csproj -c Release -p:Platform=x64 --nologo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # ---------- 6. Assemble package ----------
       - name: Assemble output
         shell: pwsh
         run: |
           $out = "x64\Release"
           New-Item -ItemType Directory -Force -Path "$out\Assets" | Out-Null
           Copy-Item -Recurse "C:\assets\*" "$out\Assets\" -Force
-          # 补充 paddle 运行时 DLL（CMake POST_BUILD 只拷一部分）
+          # paddle 运行时 DLL
           Copy-Item "C:\paddle_lib\paddle_inference\paddle\lib\paddle_inference.dll" $out -Force
           Copy-Item "C:\paddle_lib\paddle_inference\paddle\lib\common.dll" $out -Force
           Copy-Item "C:\paddle_lib\paddle_inference\third_party\install\mklml\lib\mklml.dll" $out -Force
           Copy-Item "C:\paddle_lib\paddle_inference\third_party\install\mklml\lib\libiomp5md.dll" $out -Force
           Copy-Item "C:\paddle_lib\paddle_inference\third_party\install\mkldnn\lib\mkldnn.dll" $out -Force -ErrorAction SilentlyContinue
-          # 完整性清单
           Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
-          # 打包
           Compress-Archive -Path "$out\*" -DestinationPath "IMao-v2-full.zip" -Force
           Get-Item "IMao-v2-full.zip" | Select-Object Name, Length
 
