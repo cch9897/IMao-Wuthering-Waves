@@ -62,6 +62,9 @@
   5. 地图与特征文件通过 GitHub Releases 分发（仓库体积限制无法放入源码树）
 - **下层金库（902）**：官方将其作为地下独立坐标系管理（`countryId=3` 黎那汐塔地下，非世界坐标），`Map.png` 无对应地形，暂无法定位显示。数据文件保留（sceneId 6 已注册，origin 为 0 占位），待作者将地下瓦片拼入地图并标定后启用
 - 特征文件（`Map_features.yml`）：作者 2026-01 版已覆盖黯原/时隙废都区域，但**不含梦州**；使用梦州必须替换为 release 中的 `Map_features_v2.yml`
+- **安装步骤**（release: `v2-map`）：
+  1. 用本 fork 源码编译（`CoordinateStruct.h` 已含 origin 偏移，`e948316` 之后）
+  2. 下载 `imao_v2_map.7z`，解压后把 `Map_features_v2.yml` 重命名为 `Map_features.yml`，替换程序 `Assets/FeaturesDatas/` 下的同名文件（IMao 运行时只加载特征文件；`NEW_MAP_v2.png` 是特征生成源图，留档备用）
 
 ### 修复记录
 - OCR 坐标解析放宽：允许 OCR 多文本块、置信度阈值 0.85→0.70、兼容 1~2 个分隔符（对应 #10 Win11 双屏/4K 下坐标识别失败场景）
