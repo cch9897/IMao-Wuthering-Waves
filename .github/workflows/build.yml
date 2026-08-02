@@ -88,10 +88,14 @@ jobs:
       - name: Fetch v2 map features (Mengzhou support)
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           cd C:\assets_src
-          curl.exe -sL -o v2map.7z https://github.com/cch9897/IMao-Wuthering-Waves/releases/download/v2-map/imao_v2_map.7z
-          & "C:\Program Files\7-Zip\7z.exe" x -y v2map.7z -oC:\v2map | Out-Null
-          Copy-Item C:\v2map\Map_features_v2.yml C:\assets\FeaturesDatas\Map_features.yml -Force
+          curl.exe -sL -o Map_features_v2.yml https://github.com/cch9897/IMao-Wuthering-Waves/releases/download/v2-map/Map_features_v2.yml
+          if (!(Test-Path Map_features_v2.yml)) { throw "v2 feature download failed" }
+          $fsz = (Get-Item Map_features_v2.yml).Length
+          if ($fsz -lt 500MB) { throw "v2 feature too small: $fsz (expected ~646MB)" }
+          Copy-Item Map_features_v2.yml C:\assets\FeaturesDatas\Map_features.yml -Force
+          Write-Host "v2 feature OK: $fsz"
 
       # ---------- 4. Build IMao-Core (C++ DLL) ----------
       - name: Configure IMao-Core
@@ -126,6 +130,12 @@ jobs:
           Copy-Item "C:\paddle_lib\third_party\install\mklml\lib\mklml.dll" $out -Force
           Copy-Item "C:\paddle_lib\third_party\install\mklml\lib\libiomp5md.dll" $out -Force
           Copy-Item "C:\paddle_lib\third_party\install\mkldnn\lib\mkldnn.dll" $out -Force -ErrorAction SilentlyContinue
+          # 校验 v2 特征已正确打入（新坐标系特征 >500MB；旧版 482MB 坐标范围不对，必须替换）
+          $mf = "$out\Assets\FeaturesDatas\Map_features.yml"
+          if (!(Test-Path $mf)) { throw "Map_features.yml missing in output" }
+          $msz = (Get-Item $mf).Length
+          if ($msz -lt 500MB) { throw "Map_features.yml wrong size in output: $msz (v2 expected ~646MB)" }
+          Write-Host "output Map_features.yml OK: $msz"
           Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
           Compress-Archive -Path "$out\*" -DestinationPath "IMao-v2-full.zip" -Force
           Get-Item "IMao-v2-full.zip" | Select-Object Name, Length
