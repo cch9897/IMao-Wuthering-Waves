@@ -15,7 +15,7 @@
         </StackPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <controls:WrapPanel x:Name="CheckBoxContainer" Orientation="Horizontal"/>
+            <StackPanel x:Name="GroupContainer" Spacing="8"/>
         </ScrollViewer>
         
     </StackPanel>

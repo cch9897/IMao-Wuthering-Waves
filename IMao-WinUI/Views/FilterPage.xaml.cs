@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using CommunityToolkit.WinUI.Controls;
 using IMao_WinUI.Helpers;
 using IMao_WinUI.StringItems;
 using IMao_WinUI.ViewModels;
@@ -36,14 +37,21 @@ public sealed partial class FilterPage : Page
         foreach (var itemsDatas in stringItem.itemsDatas)
         {
             String category = itemsDatas.Category;
-            TextBlock textBlock = new TextBlock
+
+            // 分组标题 + 可折叠
+            var expander = new Expander
             {
-                Text = category,
-                FontSize = 14,
-                Margin = new Thickness(10, 0, 0, 0),
-                Width = 6000
+                Header = category,
+                IsExpanded = true,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch
             };
-            CheckBoxContainer.Children.Add(textBlock);
+
+            var panel = new WrapPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
 
             foreach (var itemDatas in itemsDatas.ItemDatas)
             {
@@ -59,7 +67,7 @@ public sealed partial class FilterPage : Page
                 CheckBox checkBox = new CheckBox
                 {
                     Content = itemDatas.Name_SpecifiedLanguage,
-                    Margin = new Thickness(20, 0, 0, 0),
+                    Margin = new Thickness(20, 4, 0, 0),
                     FontSize = 14,
                     IsChecked = isChecked,
                     HorizontalAlignment = HorizontalAlignment.Left
@@ -68,8 +76,11 @@ public sealed partial class FilterPage : Page
                 checkBox.Checked += CheckBox_CheckedChanged;
                 checkBox.Unchecked += CheckBox_CheckedChanged;
 
-                CheckBoxContainer.Children.Add(checkBox);
+                panel.Children.Add(checkBox);
             }
+
+            expander.Content = panel;
+            GroupContainer.Children.Add(expander);
         }
     }
 
