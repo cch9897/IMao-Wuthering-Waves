@@ -111,7 +111,7 @@
         <InfoBar x:Name="Start_InfoBar_NotLatestVersion" x:Uid="Start_InfoBar_NotLatestVersion" CornerRadius="8" IsClosable="False" IsOpen="False" Severity="Informational">
             <InfoBar.ActionButton>
                 <HyperlinkButton Content="Update" HorizontalAlignment="Right"
-            NavigateUri="https://github.com/Yepin2022/IMao-Wuthering-Waves/releases"/>
+            NavigateUri="https://github.com/cch9897/IMao-Wuthering-Waves/releases"/>
             </InfoBar.ActionButton>
         </InfoBar>
     </StackPanel>

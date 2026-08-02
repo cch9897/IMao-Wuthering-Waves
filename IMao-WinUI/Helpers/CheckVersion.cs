@@ -9,7 +9,8 @@ namespace IMao_WinUI.Helpers;
 
 class CheckVersion
 {
-    private static readonly String CurrentVersion = "1.0.1";
+    // 更新通道指向本 fork（含 3.5 数据/梦州地图/过滤器重构等增强）
+    private static readonly String CurrentVersion = "v2-full";
     public static async Task<bool> IsLatest()
     {
         String tagName = await GetLatestTagName();
@@ -29,7 +30,7 @@ class CheckVersion
 
     static async Task<String> GetLatestTagName()
     {
-        String apiUrl = "https://api.github.com/repos/Yepin2022/IMao-Wuthering-Waves/releases/latest";
+        String apiUrl = "https://api.github.com/repos/cch9897/IMao-Wuthering-Waves/releases/latest";
 
         using (var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) })
         {
