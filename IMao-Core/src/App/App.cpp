@@ -344,34 +344,65 @@ bool App::GetGameMapCenterPointROC(const Mat& snapshot, Coordinate& outGameMapCe
 			FeatureFilter::FilterNearGoodKeypoints(App::FeatureData_map.imgKeypoints, App::FeatureData_map.imgDescriptors, ImgMapCoord_gameMapCenterPoint, 400, 16, mapCenterPointNearKeypoints, mapCenterPointNearDescriptors);
 		}
 		else {
-			//通过鼠标监视算出的中心坐标有一定偏差
-			//false 获取通过鼠标监视算的中心坐标 大范围搜索featurePoint
-			const Point2f ImgMapCoord_gameMapCenterPoint(App::gameMapCenterCoordinateByMouseMonitoring.x, App::gameMapCenterCoordinateByMouseMonitoring.y);
-			FeatureFilter::FilterNearGoodKeypoints(App::FeatureData_map.imgKeypoints, App::FeatureData_map.imgDescriptors, ImgMapCoord_gameMapCenterPoint, 2200, 22, mapCenterPointNearKeypoints, mapCenterPointNearDescriptors);
+			//false 首次/失败: v2 地图原点(0,0)位于梦州西北, 单锚点(0,0)无法覆盖玩家所在区域(旧图原点恰在瑝珑西北, 2200px可覆盖常用区域)
+			//依次尝试多个区域锚点（新图坐标系, 每个锚点特征密度经实测验证）, 任一成功即定位成功
+			const std::vector<Point2f> anchorCandidates = {
+				Point2f(App::gameMapCenterCoordinateByMouseMonitoring.x, App::gameMapCenterCoordinateByMouseMonitoring.y), // 鼠标监视坐标(可能为0/未初始化)
+				Point2f(10880, 3230),  // 今州城/瑝珑
+				Point2f(19848, 8944),  // 拉古那城/黎那汐塔
+				Point2f(2927, 3046),   // 玄方城/梦州
+				Point2f(11260, 1957),  // 世界原点
+				Point2f(14958, 3509),  // 黑海岸
+				Point2f(9874, 9800),   // 罗伊冰原
+			};
+
+			for (const auto& anchor : anchorCandidates) {
+				vector<KeyPoint> nearKps;
+				Mat nearDesc;
+				FeatureFilter::FilterNearGoodKeypoints(App::FeatureData_map.imgKeypoints, App::FeatureData_map.imgDescriptors, anchor, 2200, 22, nearKps, nearDesc);
+				if (nearDesc.empty())
+					continue;
+
+				ImageFeatureData centerMapNearFeatureData(nearKps, nearDesc);
+				auto goodMatchs = FeatureMatch::FindGoodMatchesFLANN(mapCenterAreaFeatureData, centerMapNearFeatureData, 0.62f, 0.50f);
+
+				Coordinate centerMapCoordinate; vector<Point2f> captrueCorners_temp;
+				if (MapCoordinate::GetMapCoordinateOfCenterGameMapPos(centerMapNearFeatureData, mapCenterAreaFeatureData, goodMatchs, mapCenterAreaImgae, centerMapCoordinate, captrueCorners_temp)) {
+					mapCenterPointNearKeypoints = nearKps;
+					mapCenterPointNearDescriptors = nearDesc;
+					existMapCenterPointCoordinate = true;
+					outGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(centerMapCoordinate, playerCurrentSceneId);
+					outLastGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(App::gameMapCenterPointImgMapCoord, playerCurrentSceneId);
+
+					if (abs((captrueCorners[2].x - captrueCorners[0].x) - (captrueCorners_temp[2].x - captrueCorners_temp[0].x)) > 10)
+						captrueCorners = captrueCorners_temp;
+
+					App::gameMapCenterCoordinateByMouseMonitoring = App::gameMapCenterPointImgMapCoord = centerMapCoordinate;
+					map_ConsecutiveFailuresCount = 0;
+					return true;
+				}
+			}
 		}
 
-		if (mapCenterPointNearDescriptors.empty()) {
-			existMapCenterPointCoordinate = false;
-			return false;
-		}
+		if (!mapCenterPointNearDescriptors.empty()) {
+			ImageFeatureData centerMapNearFeatureData(mapCenterPointNearKeypoints, mapCenterPointNearDescriptors);
+			auto goodMatchs = FeatureMatch::FindGoodMatchesFLANN(mapCenterAreaFeatureData, centerMapNearFeatureData, 0.62f, 0.50f);
 
-		ImageFeatureData centerMapNearFeatureData(mapCenterPointNearKeypoints, mapCenterPointNearDescriptors);
-		auto goodMatchs = FeatureMatch::FindGoodMatchesFLANN(mapCenterAreaFeatureData, centerMapNearFeatureData, 0.62f, 0.50f);
+			Coordinate centerMapCoordinate; vector<Point2f> captrueCorners_temp;
+			existMapCenterPointCoordinate = MapCoordinate::GetMapCoordinateOfCenterGameMapPos(centerMapNearFeatureData, mapCenterAreaFeatureData, goodMatchs, mapCenterAreaImgae, centerMapCoordinate, captrueCorners_temp);
 
-		Coordinate centerMapCoordinate; vector<Point2f> captrueCorners_temp;
-		existMapCenterPointCoordinate = MapCoordinate::GetMapCoordinateOfCenterGameMapPos(centerMapNearFeatureData, mapCenterAreaFeatureData, goodMatchs, mapCenterAreaImgae, centerMapCoordinate, captrueCorners_temp);
+			if (existMapCenterPointCoordinate) {
+				 outGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(centerMapCoordinate, playerCurrentSceneId);
+				 outLastGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(App::gameMapCenterPointImgMapCoord, playerCurrentSceneId);
 
-		if (existMapCenterPointCoordinate) {
-			 outGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(centerMapCoordinate, playerCurrentSceneId);
-			 outLastGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(App::gameMapCenterPointImgMapCoord, playerCurrentSceneId);
+				if (abs((captrueCorners[2].x - captrueCorners[0].x) - (captrueCorners_temp[2].x - captrueCorners_temp[0].x)) > 10)
+					captrueCorners = captrueCorners_temp;
 
-			if (abs((captrueCorners[2].x - captrueCorners[0].x) - (captrueCorners_temp[2].x - captrueCorners_temp[0].x)) > 10)
-				captrueCorners = captrueCorners_temp;
+				App::gameMapCenterCoordinateByMouseMonitoring = App::gameMapCenterPointImgMapCoord = centerMapCoordinate;
 
-			App::gameMapCenterCoordinateByMouseMonitoring = App::gameMapCenterPointImgMapCoord = centerMapCoordinate;
-
-			map_ConsecutiveFailuresCount = 0;
-			return true;
+				map_ConsecutiveFailuresCount = 0;
+				return true;
+			}
 		}
 	}
 
