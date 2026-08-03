@@ -90,7 +90,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           cd C:\assets_src
-          curl.exe -sL -o Map_features_v2.yml https://github.com/cch9897/IMao-Wuthering-Waves/releases/download/v2-map/Map_features_v2.yml
+          curl.exe -sL -o Map_features_v2.yml https://github.com/cch9897/IMao-Wuthering-Waves/releases/download/v2-full/Map_features_v2.yml
           if (!(Test-Path Map_features_v2.yml)) { throw "v2 feature download failed" }
           $fsz = (Get-Item Map_features_v2.yml).Length
           if ($fsz -lt 500MB) { throw "v2 feature too small: $fsz (expected ~646MB)" }
