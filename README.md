@@ -1,5 +1,22 @@
 [简中](README.md) | [EN](README.en.md) 
 
+> ## ⚠️ 本仓库为 Fork 增强版（LLM 辅助修改）
+>
+> 本仓库 fork 自 [Yepin2022/IMao-Wuthering-Waves](https://github.com/Yepin2022/IMao-Wuthering-Waves)（上游最后更新于 2026-02，v1.0.2），
+> 在原作者基础上由 **LLM（AI 助手）辅助分析、修改与构建**，主要增强：
+>
+> | 类别 | 内容 |
+> |---|---|
+> | 点位数据 | 全量更新至 **3.5 版本**（梦州·玄方地界等），官方库街区数据源自动生成 |
+> | 地图支持 | 扩展地图覆盖 **梦州/黯原/时隙废都**，重新生成 SURF 特征（含新区域） |
+> | 大地图定位 | 修复 v2 地图下多区域锚点匹配失败的问题（多锚点搜索） |
+> | OCR 修复 | 放宽坐标解析（对应上游 issue #10，4K/缩放场景） |
+> | 过滤器 | 按官方数据全量重建分类（525 类型），星声奖励/收集物/敌人/其他 分组可折叠 |
+> | 打包交付 | GitHub Actions 自动构建，**.NET 自包含**（无需安装运行环境）、WinUI 3 自包含、Paddle 推理内置 |
+> | 更新通道 | 指向本 fork（不再误报上游旧版更新） |
+>
+> 使用 **本仓库 Releases**（上游 1.0.2 为旧版）：https://github.com/cch9897/IMao-Wuthering-Waves/releases
+
 ### 介绍
 一款叠加在游戏窗口上的交互地图，借助图像匹配技术，实时同步玩家位置，减少玩家在探索过程中来回切换游戏与地图工具的操作次数。
 
@@ -22,7 +39,7 @@
 
 ### 使用方法
 1.  运行环境准备 [NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) 和 [Microsoft Visual C++ 2015-2022 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
-2.  前往[Releases](https://github.com/Yepin2022/IMao-Wuthering-Waves/releases)下载最新版 解压后运行IMao-WinUI.exe
+2.  前往[Releases](https://github.com/cch9897/IMao-Wuthering-Waves/releases)下载最新版 解压后运行IMao-WinUI.exe
 3.  打开游戏，并将其分辨率调成16:9
 4.  在确保游戏左下角坐标清晰显示后单击启动按钮，等待右下角信息消失后，即成功识别到正确的坐标后，在功能页开启需要的功能即可
 

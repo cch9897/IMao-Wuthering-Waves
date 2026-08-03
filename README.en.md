@@ -1,5 +1,15 @@
 # IMao-Wuthering-Waves
 
+> ## ⚠️ This is an LLM-enhanced fork
+>
+> Forked from [Yepin2022/IMao-Wuthering-Waves](https://github.com/Yepin2022/IMao-Wuthering-Waves)
+> (upstream last updated 2026-02, v1.0.2), modified and built with the help of an **LLM (AI assistant)**.
+> Key enhancements: full 3.5 map data (Mengzhou etc.), extended map + regenerated SURF features,
+> big-map multi-anchor location fix, OCR coordinate parsing fix (#10), rebuilt filter categories
+> (collapsible groups), .NET self-contained packaging via GitHub Actions CI, update channel pointed to this fork.
+>
+> Use releases from **this repository**: https://github.com/cch9897/IMao-Wuthering-Waves/releases
+
 #### Introduction
 An interactive map overlaying the game window that uses image matching technology to synchronize player locations in real-time, reducing the frequency with which players switch back and forth between the game and map tools during exploration.
 
