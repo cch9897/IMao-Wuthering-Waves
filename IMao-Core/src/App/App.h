@@ -137,6 +137,17 @@ private:
 	Coordinate gameMapCenterPointImgMapCoord;
 	bool existMapCenterPointCoordinate;
 	int map_ConsecutiveFailuresCount;
+	// 地图特征点空间网格索引: 加速大地图锚点搜索(避免每次全量扫描约 200 万特征点)
+	static constexpr int MapGridCellSize = 500;          // 网格边长(px)
+	static constexpr int MapFallbackSpacing = 4200;      // 全图兜底锚点间距(px)
+	static constexpr float MapFallbackRadius = 3000.0f;  // 兜底搜索半径, >= 间距/√2, 保证任意位置被覆盖
+	static constexpr int MapFallbackMaxKeypoints = 4096; // 兜底匹配特征上限(控制 FLANN 开销)
+	std::vector<std::vector<size_t>> mapKeypointGrid;    // 单元格 -> 特征点下标
+	int mapGridCols = 0;
+	int mapGridRows = 0;
+	int mapFallbackCols = 0;
+	int mapFallbackRows = 0;
+	int mapFallbackAnchorIndex = 0;                      // 兜底锚点轮询游标
 
 	std::optional<CaptureSnapshot> graphicsCapture;
 	std::optional<BitBltCapture> bitBltCapture;
@@ -154,7 +165,7 @@ private:
 	float inertiaStep = 1;
 	float scaleFactor = 1;
 	std::vector<cv::Point2f> captrueCorners{ cv::Point2f(0,0),cv::Point2f(0,0),cv::Point2f(0,0) ,cv::Point2f(0,0) };
-	bool mapNotMoving;
+	bool mapNotMoving = false; // 必须显式初始化: 主循环可能在鼠标线程首次置位前就读到它
 
 	std::thread keyMonitoringThread;
 
@@ -174,6 +185,7 @@ private:
 
 	winrt::IAsyncOperation<bool> GetMinMapPlayerROC(const Mat& snapshot, Coordinate& outPlayerROC, float& outMinMapRadius);
 	bool GetGameMapCenterPointROC(const Mat& snapshot, Coordinate& gameMapCenterPointROC, Coordinate& lastGameMapCenterPointROC);
+	void CollectNearMapKeypoints(const cv::Point2f& center, float searchRadius, float sizeThreshold, std::vector<cv::KeyPoint>& outKeypoints, cv::Mat& outDescriptors);
 	void Thread_GetItemMapScreenCoordinateByMouseMonitoring();
 	void Thread_KeyMonitoring_SavePlayerNearItemPoint();
 };

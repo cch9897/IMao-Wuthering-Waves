@@ -1,4 +1,5 @@
-﻿#include "App.h"
+﻿#include <algorithm>
+#include "App.h"
 #include "..\Coordinate\locationCalculator\RelativeCoordinates.h"
 #include "..\Coordinate\locationCalculator\ScreenCoordinate.h"
 #include "..\ImguiDraw\Items\DrawItemOnMinMap.h"
@@ -40,6 +41,34 @@ bool App::Init() {
 
 	if(!IdentifyWorldCoordinates::isLoaded)
 		IdentifyWorldCoordinates::Init(GetCurrentPath() + "\\Assets\\models\\PP-OCRv5_mobile_det_infer", GetCurrentPath() + "\\Assets\\models\\PP-OCRv5_mobile_rec_infer",string(), GetCurrentPath() + "\\Assets\\models\\ch_ppocr_mobile_v2.0_cls_infer");
+
+	// 构建地图特征点空间网格索引(大地图锚点搜索加速; 特征加载失败时保持为空, 搜索直接跳过)
+	mapKeypointGrid.clear();
+	mapGridCols = mapGridRows = 0;
+	mapFallbackCols = mapFallbackRows = 0;
+	if (!FeatureData_map.imgKeypoints.empty()) {
+		float maxX = 0, maxY = 0;
+		for (const auto& kp : FeatureData_map.imgKeypoints) {
+			if (kp.pt.x > maxX) maxX = kp.pt.x;
+			if (kp.pt.y > maxY) maxY = kp.pt.y;
+		}
+		mapGridCols = (int)(maxX / MapGridCellSize) + 2;
+		mapGridRows = (int)(maxY / MapGridCellSize) + 2;
+		mapKeypointGrid.resize((size_t)mapGridCols * mapGridRows);
+		for (size_t i = 0; i < FeatureData_map.imgKeypoints.size(); ++i) {
+			const cv::KeyPoint& kp = FeatureData_map.imgKeypoints[i];
+			int cx = (int)(kp.pt.x / MapGridCellSize);
+			int cy = (int)(kp.pt.y / MapGridCellSize);
+			// 防御: 异常/负坐标特征不得越界(正常地图特征坐标均为非负)
+			if (cx < 0) cx = 0;
+			if (cy < 0) cy = 0;
+			if (cx >= mapGridCols) cx = mapGridCols - 1;
+			if (cy >= mapGridRows) cy = mapGridRows - 1;
+			mapKeypointGrid[(size_t)cy * mapGridCols + cx].push_back(i);
+		}
+		mapFallbackCols = (int)(maxX / MapFallbackSpacing) + 1;
+		mapFallbackRows = (int)(maxY / MapFallbackSpacing) + 1;
+	}
 
 	Mat snapshot;
 	GetMatSnapshot(true, snapshot);
@@ -88,8 +117,10 @@ winrt::IAsyncAction App::Start() {
 			Coordinate playerROC;
 			float minMapRadius;
 
-			imguiWindowsHeight = minMapBottomPoint.y + 10;//在绘制小地图区域 缩写imgui透明窗口范围
-			imguiWindowsWidth = rect.right * 0.3;
+			if (!isOpenMap) { // 大地图打开期间保持覆盖窗口为全窗口尺寸, 避免大地图物品被裁剪
+				imguiWindowsHeight = minMapBottomPoint.y + 10;//在绘制小地图区域 缩写imgui透明窗口范围
+				imguiWindowsWidth = rect.right * 0.3;
+			}
 
 			if (co_await GetMinMapPlayerROC(gameSnapshot, playerROC, minMapRadius)) {
 				if (enabledMinMapShowItem) {
@@ -334,83 +365,147 @@ bool App::GetGameMapCenterPointROC(const Mat& snapshot, Coordinate& outGameMapCe
 	ImageFeatureData mapCenterAreaFeatureData = FeatureMatch::ExtractSurfFeatures(surt, mapCenterAreaImgae);
 
 	if (!mapCenterAreaFeatureData.imgDescriptors.empty()) {
-		vector<vector<DMatch>> knnMatches;
 		vector<KeyPoint> mapCenterPointNearKeypoints;
 		Mat mapCenterPointNearDescriptors;
 
-		if (existMapCenterPointCoordinate) {
-			//true 小范围搜索featurePoint并给通过鼠标监视算的中心坐标赋正确的值（最后） 
-			const Point2f ImgMapCoord_gameMapCenterPoint(App::gameMapCenterPointImgMapCoord.x, App::gameMapCenterPointImgMapCoord.y);
-			FeatureFilter::FilterNearGoodKeypoints(App::FeatureData_map.imgKeypoints, App::FeatureData_map.imgDescriptors, ImgMapCoord_gameMapCenterPoint, 400, 16, mapCenterPointNearKeypoints, mapCenterPointNearDescriptors);
-		}
-		else {
-			//false 首次/失败: v2 地图原点(0,0)位于梦州西北, 单锚点(0,0)无法覆盖玩家所在区域(旧图原点恰在瑝珑西北, 2200px可覆盖常用区域)
-			//依次尝试多个区域锚点（新图坐标系, 每个锚点特征密度经实测验证）, 任一成功即定位成功
-			const std::vector<Point2f> anchorCandidates = {
-				Point2f(App::gameMapCenterCoordinateByMouseMonitoring.x, App::gameMapCenterCoordinateByMouseMonitoring.y), // 鼠标监视坐标(可能为0/未初始化)
-				Point2f(10880, 3230),  // 今州城/瑝珑
-				Point2f(19848, 8944),  // 拉古那城/黎那汐塔
-				Point2f(2927, 3046),   // 玄方城/梦州
-				Point2f(11260, 1957),  // 世界原点
-				Point2f(14958, 3509),  // 黑海岸
-				Point2f(9874, 9800),   // 罗伊冰原
-			};
-
-			for (const auto& anchor : anchorCandidates) {
-				vector<KeyPoint> nearKps;
-				Mat nearDesc;
-				FeatureFilter::FilterNearGoodKeypoints(App::FeatureData_map.imgKeypoints, App::FeatureData_map.imgDescriptors, anchor, 2200, 22, nearKps, nearDesc);
-				if (nearDesc.empty())
-					continue;
-
-				ImageFeatureData centerMapNearFeatureData(nearKps, nearDesc);
-				auto goodMatchs = FeatureMatch::FindGoodMatchesFLANN(mapCenterAreaFeatureData, centerMapNearFeatureData, 0.62f, 0.50f);
-
-				Coordinate centerMapCoordinate; vector<Point2f> captrueCorners_temp;
-				if (MapCoordinate::GetMapCoordinateOfCenterGameMapPos(centerMapNearFeatureData, mapCenterAreaFeatureData, goodMatchs, mapCenterAreaImgae, centerMapCoordinate, captrueCorners_temp)) {
-					mapCenterPointNearKeypoints = nearKps;
-					mapCenterPointNearDescriptors = nearDesc;
-					existMapCenterPointCoordinate = true;
-					outGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(centerMapCoordinate, playerCurrentSceneId);
-					outLastGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(App::gameMapCenterPointImgMapCoord, playerCurrentSceneId);
-
-					if (abs((captrueCorners[2].x - captrueCorners[0].x) - (captrueCorners_temp[2].x - captrueCorners_temp[0].x)) > 10)
-						captrueCorners = captrueCorners_temp;
-
-					App::gameMapCenterCoordinateByMouseMonitoring = App::gameMapCenterPointImgMapCoord = centerMapCoordinate;
-					map_ConsecutiveFailuresCount = 0;
-					return true;
-				}
-			}
-		}
-
-		if (!mapCenterPointNearDescriptors.empty()) {
-			ImageFeatureData centerMapNearFeatureData(mapCenterPointNearKeypoints, mapCenterPointNearDescriptors);
+		// 匹配并提交: 成功则更新中心坐标/角点/状态并返回 true
+		auto tryMatchAndCommit = [&](const vector<KeyPoint>& nearKps, const Mat& nearDesc) -> bool {
+			ImageFeatureData centerMapNearFeatureData(nearKps, nearDesc);
 			auto goodMatchs = FeatureMatch::FindGoodMatchesFLANN(mapCenterAreaFeatureData, centerMapNearFeatureData, 0.62f, 0.50f);
 
 			Coordinate centerMapCoordinate; vector<Point2f> captrueCorners_temp;
-			existMapCenterPointCoordinate = MapCoordinate::GetMapCoordinateOfCenterGameMapPos(centerMapNearFeatureData, mapCenterAreaFeatureData, goodMatchs, mapCenterAreaImgae, centerMapCoordinate, captrueCorners_temp);
-
-			if (existMapCenterPointCoordinate) {
-				 outGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(centerMapCoordinate, playerCurrentSceneId);
-				 outLastGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(App::gameMapCenterPointImgMapCoord, playerCurrentSceneId);
+			if (MapCoordinate::GetMapCoordinateOfCenterGameMapPos(centerMapNearFeatureData, mapCenterAreaFeatureData, goodMatchs, mapCenterAreaImgae, centerMapCoordinate, captrueCorners_temp)) {
+				existMapCenterPointCoordinate = true;
+				mapFallbackAnchorIndex = 0;
+				outGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(centerMapCoordinate, playerCurrentSceneId);
+				outLastGameMapCenterPointROC = RelativeCoordinates::ImgMapCoordToROC(App::gameMapCenterPointImgMapCoord, playerCurrentSceneId);
 
 				if (abs((captrueCorners[2].x - captrueCorners[0].x) - (captrueCorners_temp[2].x - captrueCorners_temp[0].x)) > 10)
 					captrueCorners = captrueCorners_temp;
 
 				App::gameMapCenterCoordinateByMouseMonitoring = App::gameMapCenterPointImgMapCoord = centerMapCoordinate;
-
 				map_ConsecutiveFailuresCount = 0;
 				return true;
+			}
+			return false;
+		};
+
+		if (existMapCenterPointCoordinate) {
+			//已定位: 围绕上次匹配中心小范围搜索(半径放宽到 1000, 覆盖打开大地图时的中心偏移与小幅拖动)
+			const Point2f ImgMapCoord_gameMapCenterPoint(App::gameMapCenterPointImgMapCoord.x, App::gameMapCenterPointImgMapCoord.y);
+			CollectNearMapKeypoints(ImgMapCoord_gameMapCenterPoint, 1000, 16, mapCenterPointNearKeypoints, mapCenterPointNearDescriptors);
+
+			//失败则降级为全图搜索(flag 置 false), 避免拖动/传送后窄搜索永久失配
+			if (mapCenterPointNearDescriptors.empty() || !tryMatchAndCommit(mapCenterPointNearKeypoints, mapCenterPointNearDescriptors)) {
+				existMapCenterPointCoordinate = false;
+			}
+		}
+		else {
+			//首次/失败: v2 地图原点(0,0)位于梦州西北, 单锚点无法覆盖玩家所在区域
+			//依次尝试: 鼠标监视中心 → 小地图跟踪的玩家位置(打开大地图时地图中心即玩家位置) → 固定区域锚点
+			//全部失败后按 4200px 网格轮询全图锚点(半径 3000 >= 网格半对角, 任意位置必被覆盖)
+			const std::vector<Point2f> anchorCandidates = {
+				Point2f(App::gameMapCenterCoordinateByMouseMonitoring.x, App::gameMapCenterCoordinateByMouseMonitoring.y), // 鼠标监视坐标(拖拽/惯性滑动时更新)
+				Point2f(App::gameMapCenterPointImgMapCoord.x, App::gameMapCenterPointImgMapCoord.y),                    // 小地图跟踪的玩家位置
+				Point2f(10880, 3230),  // 今州城/瑝珑
+				Point2f(19848, 8944),  // 拉古那城/黎那汐塔
+				Point2f(2927, 3046),   // 玄方城/梦州
+				Point2f(11260, 1957),  // 世界原点
+				Point2f(14958, 3509),  // 黑海岸
+				Point2f(9874, 9800),   // 瑝珑南部(荒石高地一带)
+			};
+
+			bool located = false;
+			for (const auto& anchor : anchorCandidates) {
+				vector<KeyPoint> nearKps;
+				Mat nearDesc;
+				CollectNearMapKeypoints(anchor, 2200, 22, nearKps, nearDesc);
+				if (nearDesc.empty())
+					continue;
+
+				if (tryMatchAndCommit(nearKps, nearDesc)) {
+					located = true;
+					break;
+				}
+			}
+
+			//固定锚点全部失败: 全图网格锚点轮询(每个失败周期尝试一个, 覆盖任意地图位置)
+			if (!located && mapFallbackCols > 0 && mapFallbackRows > 0) {
+				int idx = mapFallbackAnchorIndex;
+				mapFallbackAnchorIndex = (mapFallbackAnchorIndex + 1) % (mapFallbackCols * mapFallbackRows);
+				Point2f fallbackAnchor(2000 + (idx % mapFallbackCols) * MapFallbackSpacing, 2000 + (idx / mapFallbackCols) * MapFallbackSpacing);
+
+				vector<KeyPoint> nearKps;
+				Mat nearDesc;
+				CollectNearMapKeypoints(fallbackAnchor, MapFallbackRadius, 22, nearKps, nearDesc);
+				if (!nearDesc.empty()) {
+					if (nearKps.size() > MapFallbackMaxKeypoints) {
+						//按响应质量排序, 只取前 MapFallbackMaxKeypoints 个, 控制 FLANN 构建开销
+						vector<size_t> order(nearKps.size());
+						for (size_t i = 0; i < order.size(); ++i)
+							order[i] = i;
+						sort(order.begin(), order.end(), [&](size_t a, size_t b) { return nearKps[a].response > nearKps[b].response; });
+
+						vector<KeyPoint> cappedKps;
+						Mat cappedDesc;
+						cappedKps.reserve(MapFallbackMaxKeypoints);
+						for (int i = 0; i < MapFallbackMaxKeypoints; ++i) {
+							cappedKps.push_back(nearKps[order[i]]);
+							cappedDesc.push_back(nearDesc.row((int)order[i]));
+						}
+						located = tryMatchAndCommit(cappedKps, cappedDesc);
+					}
+					else {
+						located = tryMatchAndCommit(nearKps, nearDesc);
+					}
+				}
 			}
 		}
 	}
 
+	// 任一搜索路径成功(commit 置位 existMapCenterPointCoordinate)即返回 true
+	if (existMapCenterPointCoordinate)
+		return true;
+
 	map_ConsecutiveFailuresCount++;
-	if (map_ConsecutiveFailuresCount > 10)
-		Notification::AddInfo(NotificationDatas("Please move the map to an area with obvious features or reopen the map.", 3));
+	//首次失败 11 次后提示一次, 之后每约 5 秒(60 周期)重提一次, 避免每 80ms 刷屏
+	if (map_ConsecutiveFailuresCount == 11 || map_ConsecutiveFailuresCount % 60 == 11)
+		Notification::AddInfo(NotificationDatas("Big map locate failed: move the map over obvious terrain or reopen it.", 3));
 
 	return false;
+}
+
+// 网格加速的半径搜索: 收集 center 半径 searchRadius 内、size > sizeThreshold 的特征点
+void App::CollectNearMapKeypoints(const Point2f& center, float searchRadius, float sizeThreshold, vector<KeyPoint>& outKeypoints, Mat& outDescriptors) {
+	outKeypoints.clear();
+	outDescriptors.release();
+	if (mapKeypointGrid.empty() || FeatureData_map.imgKeypoints.empty())
+		return;
+
+	int minCx = max(0, (int)((center.x - searchRadius) / MapGridCellSize));
+	int maxCx = min(mapGridCols - 1, (int)((center.x + searchRadius) / MapGridCellSize));
+	int minCy = max(0, (int)((center.y - searchRadius) / MapGridCellSize));
+	int maxCy = min(mapGridRows - 1, (int)((center.y + searchRadius) / MapGridCellSize));
+	if (minCx > maxCx || minCy > maxCy)
+		return;
+
+	const float radiusSq = searchRadius * searchRadius;
+	for (int cy = minCy; cy <= maxCy; ++cy) {
+		for (int cx = minCx; cx <= maxCx; ++cx) {
+			const auto& cell = mapKeypointGrid[(size_t)cy * mapGridCols + cx];
+			for (size_t i : cell) {
+				const KeyPoint& kp = FeatureData_map.imgKeypoints[i];
+				if (kp.size <= sizeThreshold)
+					continue;
+				const float dx = kp.pt.x - center.x;
+				const float dy = kp.pt.y - center.y;
+				if (dx * dx + dy * dy <= radiusSq) {
+					outKeypoints.push_back(kp);
+					outDescriptors.push_back(FeatureData_map.imgDescriptors.row((int)i));
+				}
+			}
+		}
+	}
 }
 
 void App::Thread_GetItemMapScreenCoordinateByMouseMonitoring() {
